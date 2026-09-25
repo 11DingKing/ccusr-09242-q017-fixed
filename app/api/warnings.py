@@ -116,10 +116,12 @@ def run_detection(
     db: Session = Depends(get_db),
 ):
     if target_type and target_id:
-        warnings = run_warning_detection_for_target(db, target_type, target_id)
+        result = run_warning_detection_for_target(db, target_type, target_id)
+        db.commit()
         return {
             "message": f"针对{target_type}#{target_id}的预警检测完成",
-            "warnings_count": len(warnings),
+            **result.counts(),
+            "warnings_count": len(result.warnings),
             "warnings": [
                 {
                     "id": w.id,
@@ -127,7 +129,7 @@ def run_detection(
                     "level": w.warning_level.value,
                     "description": w.description,
                 }
-                for w in warnings
+                for w in result.warnings
             ],
         }
     else:
